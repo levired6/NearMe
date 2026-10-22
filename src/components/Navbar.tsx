@@ -1,84 +1,110 @@
 import React, { useState } from 'react';
-import { Search, Mic, MapPin, Compass } from 'lucide-react';
+import { Search, Navigation, Mic, User, Star, Sparkles } from 'lucide-react';
+import { UserProfile } from '../types/user';
 
 interface NavbarProps {
-  onSearchZip: (zipOrCity: string) => void;
+  currentUser: UserProfile | null;
+  onSearchZip: (zip: string) => void;
   onOpenVoice: () => void;
   onUseCurrentLocation: () => void;
-  currentLocationName?: string;
+  onOpenAuth: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  currentUser,
   onSearchZip,
   onOpenVoice,
   onUseCurrentLocation,
-  currentLocationName = 'Current Location',
+  onOpenAuth,
 }) => {
-  const [searchInput, setSearchInput] = useState('');
+  const [zipInput, setZipInput] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchInput.trim()) {
-      onSearchZip(searchInput.trim());
+    if (zipInput.trim()) {
+      onSearchZip(zipInput.trim());
     }
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-gray-900/90 backdrop-blur-md border-b border-gray-800 text-white px-4 py-3 shadow-md">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
-        
-        {/* Brand Logo */}
-        <div className="flex items-center space-x-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-            <Compass className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-bold text-xl tracking-tight hidden xs:inline bg-gradient-to-r from-white via-gray-200 to-indigo-300 bg-clip-text text-transparent">
-            NearMe
-          </span>
+    <header className="bg-gray-900/90 backdrop-blur-md border-b border-gray-800 text-white px-4 py-3 flex items-center justify-between z-30 shadow-lg">
+      
+      {/* Brand Logo */}
+      <div className="flex items-center space-x-2">
+        <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md border border-indigo-400/30">
+          <Sparkles className="w-4 h-4 text-white" />
         </div>
+        <span className="font-extrabold text-base tracking-tight hidden sm:inline text-white">NearMe</span>
+      </div>
 
-        {/* Search Bar for ZIP / City */}
-        <form onSubmit={handleSubmit} className="flex-1 max-w-md relative">
+      {/* ZIP Code & City Search Form */}
+      <form onSubmit={handleSearch} className="flex-1 max-w-sm mx-3 flex items-center space-x-1.5">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Enter ZIP code or city (e.g. 78701 or Austin)..."
-            className="w-full bg-gray-800 text-white placeholder-gray-400 text-xs sm:text-sm rounded-full pl-9 pr-8 py-2 border border-gray-700 focus:outline-none focus:border-indigo-500 transition"
+            placeholder="Search ZIP or City (e.g., 62298, 11211, Austin)..."
+            value={zipInput}
+            onChange={(e) => setZipInput(e.target.value)}
+            className="w-full bg-gray-950 border border-gray-800 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition"
           />
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          {searchInput && (
-            <button
-              type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded-full transition"
-            >
-              Go
-            </button>
-          )}
-        </form>
-
-        {/* Action Controls */}
-        <div className="flex items-center space-x-2">
-          {/* Geolocation Button */}
-          <button
-            onClick={onUseCurrentLocation}
-            title="Use current GPS location"
-            className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-indigo-400 transition flex items-center justify-center"
-          >
-            <MapPin className="w-4 h-4" />
-          </button>
-
-          {/* Voice & AI Assistant Button */}
-          <button
-            onClick={onOpenVoice}
-            className="flex items-center space-x-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs sm:text-sm font-medium px-3 py-2 rounded-full shadow-lg transition transform active:scale-95"
-          >
-            <Mic className="w-4 h-4" />
-            <span className="hidden sm:inline">Ask AI</span>
-          </button>
         </div>
+        <button
+          type="submit"
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-full text-xs font-semibold shadow transition"
+        >
+          Go
+        </button>
+      </form>
 
+      {/* Controls: GPS, Voice Assistant & User Auth */}
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={onUseCurrentLocation}
+          className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700/60 transition"
+          title="Use my current GPS position"
+        >
+          <Navigation className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={onOpenVoice}
+          className="px-3 py-1.5 rounded-full bg-indigo-950 hover:bg-indigo-900 border border-indigo-800/60 text-indigo-200 text-xs font-medium flex items-center space-x-1 transition shadow"
+        >
+          <Mic className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="hidden md:inline">Ask AI</span>
+        </button>
+
+        {/* User Auth Profile Button */}
+        <button
+          onClick={onOpenAuth}
+          className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center space-x-1.5 transition border ${
+            currentUser
+              ? currentUser.tier === 'pro'
+                ? 'bg-amber-950/80 border-amber-500/60 text-amber-300 shadow-lg'
+                : 'bg-gray-800 border-gray-700 text-white'
+              : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400/30'
+          }`}
+        >
+          {currentUser ? (
+            <>
+              {currentUser.photoURL ? (
+                <img src={currentUser.photoURL} alt={currentUser.displayName} className="w-4 h-4 rounded-full object-cover" />
+              ) : (
+                <User className="w-3.5 h-3.5" />
+              )}
+              <span className="max-w-[80px] truncate">{currentUser.displayName}</span>
+              {currentUser.tier === 'pro' && <Star className="w-3 h-3 fill-amber-400 text-amber-400" />}
+            </>
+          ) : (
+            <>
+              <User className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </>
+          )}
+        </button>
       </div>
+
     </header>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NearMeEvent } from '../types/event';
 import { 
   Utensils, 
@@ -14,7 +14,8 @@ import {
   Wrench, 
   Sparkles, 
   Info, 
-  Star 
+  Star,
+  Search
 } from 'lucide-react';
 
 interface BottomSheetProps {
@@ -49,6 +50,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   onSelectEvent,
   onOpenDetail,
 }) => {
+  const [filterQuery, setFilterQuery] = useState('');
+
   useEffect(() => {
     if (selectedEvent) {
       const targetCard = document.getElementById(`card-${selectedEvent.id}`);
@@ -58,15 +61,21 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     }
   }, [selectedEvent]);
 
-  const filteredEvents = selectedCategory === 'all'
-    ? events
-    : events.filter((e) => e.category === selectedCategory);
+  // Filter events by category AND keyword search input
+  const filteredEvents = events.filter((e) => {
+    const matchesCategory = selectedCategory === 'all' || e.category === selectedCategory;
+    const matchesKeyword = !filterQuery.trim() || 
+      e.title.toLowerCase().includes(filterQuery.toLowerCase()) ||
+      e.venueName.toLowerCase().includes(filterQuery.toLowerCase()) ||
+      e.location.address.toLowerCase().includes(filterQuery.toLowerCase());
+    return matchesCategory && matchesKeyword;
+  });
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-20 bg-gray-900/95 backdrop-blur-md border-t border-gray-800 text-white rounded-t-3xl shadow-2xl p-4 h-[40vh] max-h-[450px] flex flex-col">
+    <div className="fixed bottom-0 left-0 right-0 z-20 bg-gray-900/95 backdrop-blur-md border-t border-gray-800 text-white rounded-t-3xl shadow-2xl p-4 h-[42vh] max-h-[460px] flex flex-col">
       
       {/* Category Pills Bar */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-3 flex-shrink-0 no-scrollbar">
+      <div className="flex items-center space-x-2 overflow-x-auto pb-2.5 flex-shrink-0 no-scrollbar">
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           const isActive = selectedCategory === cat.id;
@@ -87,11 +96,23 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         })}
       </div>
 
-      {/* Events Card Scrollable List */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1 mt-1">
+      {/* Specific Keyword Search Filter */}
+      <div className="relative mb-3 flex-shrink-0">
+        <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
+        <input
+          type="text"
+          placeholder="Filter nearby places (e.g., barbecue, sushi, subway, market)..."
+          value={filterQuery}
+          onChange={(e) => setFilterQuery(e.target.value)}
+          className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+        />
+      </div>
+
+      {/* Events List */}
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {filteredEvents.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 text-sm">
-            No items found for this category nearby. Try searching another ZIP code or location!
+          <div className="text-center py-8 text-gray-400 text-xs">
+            No matching spots found. Try clearing your search filter or selecting another category!
           </div>
         ) : (
           filteredEvents.map((event) => {

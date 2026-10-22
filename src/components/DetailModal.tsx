@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NearMeEvent } from '../types/event';
+import { UserProfile } from '../types/user';
 import { TicketPreviewModal } from './TicketPreviewModal';
 import { RideshareModal } from './RideshareModal';
 import { OrderDeliveryModal } from './OrderDeliveryModal';
@@ -16,12 +17,6 @@ import {
   Clock, 
   Phone, 
   Car, 
-  Utensils, 
-  Wine, 
-  Users, 
-  Dog, 
-  Smile, 
-  Zap, 
   MessageSquare, 
   Ticket,
   ShoppingBag,
@@ -30,32 +25,69 @@ import {
   Sprout,
   Apple,
   CreditCard,
+  Bookmark,
+  Users,
+  Check,
+  Plus,
   ChevronDown, 
   ChevronUp 
 } from 'lucide-react';
 
 interface DetailModalProps {
   event: NearMeEvent | null;
+  currentUser: UserProfile | null;
   userLat?: number;
   userLng?: number;
   onClose: () => void;
+  onOpenAuth: () => void;
+  onSaveToCollection?: (eventId: string, collectionTitle: string) => void;
+  onTagFriend?: (eventId: string, friendHandle: string) => void;
 }
 
-export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.2672, userLng = -97.7431, onClose }) => {
+export const DetailModal: React.FC<DetailModalProps> = ({ 
+  event, 
+  currentUser,
+  userLat = 30.2672, 
+  userLng = -97.7431, 
+  onClose,
+  onOpenAuth,
+  onSaveToCollection,
+  onTagFriend
+}) => {
   const [showHours, setShowHours] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [isRideshareModalOpen, setIsRideshareModalOpen] = useState(false);
   const [isTransitScheduleOpen, setIsTransitScheduleOpen] = useState(false);
   const [activeDeliveryPlatform, setActiveDeliveryPlatform] = useState<'doordash' | 'ubereats' | null>(null);
 
+  // Pro Feature States
+  const [friendInput, setFriendInput] = useState('');
+  const [taggedList, setTaggedList] = useState<string[]>([]);
+  const [savedCollection, setSavedCollection] = useState<string | null>(null);
+
   if (!event) return null;
 
+  const isPro = currentUser?.tier === 'pro';
   const isTicketmasterEvent = event.id.startsWith('tm-');
   const isFoodOrDining = event.category === 'food' || event.category === 'drinks';
   const isTransit = event.category === 'transit';
   const isFarm = event.category === 'farms' || !!event.farmDetails;
 
   const googleMapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${event.location.latitude},${event.location.longitude}`;
+
+  const handleAddFriendTag = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!friendInput.trim()) return;
+    const handle = friendInput.startsWith('@') ? friendInput.trim() : `@${friendInput.trim()}`;
+    setTaggedList([...taggedList, handle]);
+    if (onTagFriend) onTagFriend(event.id, handle);
+    setFriendInput('');
+  };
+
+  const handleSaveCollection = (collectionTitle: string) => {
+    setSavedCollection(collectionTitle);
+    if (onSaveToCollection) onSaveToCollection(event.id, collectionTitle);
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -123,6 +155,90 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
               <p className="text-sm text-indigo-400 font-medium mt-1">{event.venueName}</p>
             </div>
 
+            {/* PRO TIER FEATURE 1: SAVED COLLECTIONS */}
+            <div className="bg-gray-800/40 p-3.5 rounded-2xl border border-gray-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
+                  <Bookmark className="w-4 h-4 text-amber-400" />
+                  <span>Save to Collections</span>
+                </span>
+                {!isPro && (
+                  <button onClick={onOpenAuth} className="text-[10px] font-bold uppercase text-amber-400 hover:underline">
+                    Upgrade to Pro
+                  </button>
+                )}
+              </div>
+
+              {isPro ? (
+                <div className="flex items-center gap-2 pt-1">
+                  {['Weekend Ideas', 'Favorites', 'Date Night'].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => handleSaveCollection(cat)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition border flex items-center gap-1 ${
+                        savedCollection === cat
+                          ? 'bg-amber-500 text-black border-amber-400 font-bold'
+                          : 'bg-gray-900 border-gray-700 text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      {savedCollection === cat ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                      <span>{cat}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-400 italic">
+                  Pro Members can organize places into custom collections like "Weekend Ideas".
+                </p>
+              )}
+            </div>
+
+            {/* PRO TIER FEATURE 2: META / FRIEND TAGGING */}
+            <div className="bg-gray-800/40 p-3.5 rounded-2xl border border-gray-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-indigo-400" />
+                  <span>Meta / Friend Tagging</span>
+                </span>
+                {!isPro && (
+                  <button onClick={onOpenAuth} className="text-[10px] font-bold uppercase text-indigo-400 hover:underline">
+                    Unlock Feature
+                  </button>
+                )}
+              </div>
+
+              {isPro ? (
+                <div className="space-y-2 pt-1">
+                  <form onSubmit={handleAddFriendTag} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Tag a friend (e.g. @friend_handle)..."
+                      value={friendInput}
+                      onChange={(e) => setFriendInput(e.target.value)}
+                      className="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-xl text-xs font-semibold text-white">
+                      Tag
+                    </button>
+                  </form>
+
+                  {taggedList.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {taggedList.map((tag, idx) => (
+                        <span key={idx} className="bg-indigo-950 text-indigo-300 border border-indigo-800/60 px-2.5 py-0.5 rounded-lg text-[11px] font-medium">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-400 italic">
+                  Tag friends at local spots to coordinate hangouts.
+                </p>
+              )}
+            </div>
+
             {/* Ticketmaster Ticket Button */}
             {isTicketmasterEvent && (
               <button
@@ -141,7 +257,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
               </div>
             )}
 
-            {/* Farm Stand Special In-App Details Card */}
+            {/* Farm Stand Details Card */}
             {isFarm && event.farmDetails && (
               <div className="bg-emerald-950/30 border border-emerald-800/50 p-4 rounded-2xl space-y-3 text-xs">
                 <div className="flex items-center space-x-2 text-emerald-400 font-bold">
@@ -149,7 +265,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
                   <span>Fresh Farm & Market Offerings</span>
                 </div>
 
-                {/* Produce List */}
                 {event.farmDetails.freshProduce && (
                   <div>
                     <span className="text-gray-400 font-medium block mb-1.5">Fresh Harvested Produce:</span>
@@ -163,7 +278,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
                   </div>
                 )}
 
-                {/* Farm Activities */}
                 {event.farmDetails.seasonalActivities && (
                   <div>
                     <span className="text-gray-400 font-medium block mb-1.5">Farm Experiences & Activities:</span>
@@ -177,7 +291,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
                   </div>
                 )}
 
-                {/* Payment Types */}
                 {event.farmDetails.paymentTypesAccepted && (
                   <div className="pt-2 border-t border-emerald-800/40 flex items-center justify-between text-[11px] text-gray-300">
                     <span className="flex items-center gap-1 text-gray-400"><CreditCard className="w-3.5 h-3.5 text-emerald-400" /> Payment Accepted:</span>
@@ -189,14 +302,11 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
 
             {/* Key Information Grid */}
             <div className="grid grid-cols-1 gap-3 bg-gray-800/50 p-4 rounded-2xl border border-gray-800 text-xs">
-              
-              {/* Address */}
               <div className="flex items-start space-x-3 text-gray-300">
                 <MapPin className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
                 <span>{event.location.address || 'Address available on directions map'}</span>
               </div>
 
-              {/* Hours Toggle */}
               {event.weekdayHours ? (
                 <div>
                   <button
@@ -231,7 +341,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
                 </div>
               )}
 
-              {/* Phone Call */}
               {event.phoneNumber && (
                 <div className="flex items-center space-x-3 text-gray-300">
                   <Phone className="w-4 h-4 text-indigo-400 flex-shrink-0" />
@@ -241,7 +350,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
                 </div>
               )}
 
-              {/* Rating */}
               {event.rating && (
                 <div className="flex items-center space-x-3 text-gray-300">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 flex-shrink-0" />
@@ -250,27 +358,9 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
                   </span>
                 </div>
               )}
-
-              {/* EV Chargers */}
-              {event.evCharging && (
-                <div className="flex items-center space-x-3 text-green-400 font-medium">
-                  <Zap className="w-4 h-4 flex-shrink-0" />
-                  <span>EV Charging Available ({event.evCharging.connectorCount || 'Multiple'} Connectors)</span>
-                </div>
-              )}
-
-              {/* Price Range */}
-              {event.priceRange && (
-                <div className="flex items-center space-x-3 text-gray-300">
-                  <DollarSign className="w-4 h-4 text-green-400 flex-shrink-0" />
-                  <span>
-                    ${event.priceRange.min} - ${event.priceRange.max} ({event.priceRange.currency})
-                  </span>
-                </div>
-              )}
             </div>
 
-            {/* Native In-App Transit Hub */}
+            {/* Native Transit Hub */}
             {isTransit && (
               <div className="bg-gray-800/40 p-3.5 rounded-2xl border border-gray-800 space-y-2">
                 <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider flex items-center space-x-1.5">
@@ -287,7 +377,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
               </div>
             )}
 
-            {/* In-App Food Delivery Quick Order Buttons */}
+            {/* Food Delivery Quick Order Buttons */}
             {isFoodOrDining && (
               <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-800 space-y-2">
                 <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider flex items-center space-x-1.5">
@@ -338,8 +428,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
 
             {/* Action & Transport Buttons */}
             <div className="grid grid-cols-2 gap-2.5 pt-2">
-              
-              {/* Directions */}
               <a
                 href={googleMapsDirectionsUrl}
                 target="_blank"
@@ -350,7 +438,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
                 <span>Directions</span>
               </a>
 
-              {/* Rideshare Fare Estimator CTA */}
               <button
                 onClick={() => setIsRideshareModalOpen(true)}
                 className="bg-black hover:bg-gray-950 text-white border border-gray-700 font-medium py-3 px-3 rounded-xl flex items-center justify-center space-x-2 text-xs transition"
@@ -359,7 +446,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
                 <span>Estimate Ride Fare</span>
               </button>
 
-              {/* Website Link */}
               {event.eventUrl && (
                 <a
                   href={event.eventUrl}
@@ -378,7 +464,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
         </div>
       </div>
 
-      {/* Ticket Preview Modal */}
       {isTicketModalOpen && (
         <TicketPreviewModal
           event={event}
@@ -386,7 +471,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
         />
       )}
 
-      {/* Rideshare Fare Estimator Modal */}
       {isRideshareModalOpen && (
         <RideshareModal
           event={event}
@@ -396,7 +480,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
         />
       )}
 
-      {/* In-App Delivery Ordering Modal Sheet */}
       {activeDeliveryPlatform && (
         <OrderDeliveryModal
           event={event}
@@ -405,7 +488,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ event, userLat = 30.26
         />
       )}
 
-      {/* In-App Native Transit Schedule Board */}
       {isTransitScheduleOpen && (
         <TransitScheduleModal
           event={event}

@@ -3,9 +3,11 @@ import { Navbar } from './components/Navbar';
 import { MapView } from './components/MapView';
 import { BottomSheet } from './components/BottomSheet';
 import { DetailModal } from './components/DetailModal';
+import { AuthModal } from './components/AuthModal';
 import { VoiceAssistant } from './components/VoiceAssistant';
 import { fetchAllNearMeData } from './services/api';
 import { NearMeEvent } from './types/event';
+import { UserProfile, MembershipTier } from './types/user';
 
 // Austin, TX fallback coordinates
 const DEFAULT_COORDS = { lat: 30.2672, lng: -97.7431 };
@@ -18,7 +20,11 @@ export function App() {
   const [detailEvent, setDetailEvent] = useState<NearMeEvent | null>(null);
   const [highlightedIds, setHighlightedIds] = useState<string[]>([]);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   // Request browser GPS position cleanly
   const handleUseCurrentLocation = () => {
@@ -32,7 +38,7 @@ export function App() {
           }
         },
         (error: GeolocationPositionError) => {
-          console.warn('Geolocation denied/unavailable. Using default location:', error);
+          console.warn('Geolocation unavailable. Using default:', error);
           setCoords(DEFAULT_COORDS);
         },
         { timeout: 5000 }
@@ -86,13 +92,51 @@ export function App() {
     }
   };
 
+  const handleUpgradeTier = (newTier: MembershipTier) => {
+    if (currentUser) {
+      setCurrentUser({ ...currentUser, tier: newTier });
+    } else {
+      setCurrentUser({
+        uid: 'user-pro-1',
+        displayName: 'User',
+        email: 'user@nearme.com',
+        tier: newTier,
+        savedEventIds: [],
+        collections: [
+          { id: 'c1', title: 'Weekend Ideas', eventIds: [] }
+        ],
+        taggedFriends: []
+      });
+    }
+  };
+
+  const handleSaveToCollection = (eventId: string, collectionTitle: string) => {
+    if (!currentUser) return;
+    const updated = { ...currentUser };
+    if (!updated.savedEventIds.includes(eventId)) {
+      updated.savedEventIds.push(eventId);
+    }
+    setCurrentUser(updated);
+  };
+
+  const handleTagFriend = (eventId: string, friendHandle: string) => {
+    if (!currentUser) return;
+    const updated = { ...currentUser };
+    if (!updated.taggedFriends.includes(friendHandle)) {
+      updated.taggedFriends.push(friendHandle);
+    }
+    setCurrentUser(updated);
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-gray-950 font-sans text-gray-100">
       {/* Header Bar */}
       <Navbar
+        currentUser={currentUser}
         onSearchZip={handleSearchZip}
         onOpenVoice={() => setIsVoiceOpen(true)}
         onUseCurrentLocation={handleUseCurrentLocation}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       {/* Main Map Canvas Area */}
@@ -100,7 +144,7 @@ export function App() {
         {loading && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-gray-900/90 text-indigo-400 text-xs px-4 py-2 rounded-full border border-gray-800 shadow-xl flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
-            <span>Loading nearby events & places...</span>
+            <span>Loading nearby places...</span>
           </div>
         )}
 
@@ -114,7 +158,7 @@ export function App() {
         />
       </main>
 
-      {/* Mobile Bottom Sheet Drawer */}
+      {/* Bottom Sheet Drawer */}
       <BottomSheet
         events={events}
         selectedCategory={selectedCategory}
@@ -127,9 +171,22 @@ export function App() {
       {/* In-App Detail View Modal */}
       <DetailModal
         event={detailEvent}
+        currentUser={currentUser}
         userLat={coords.lat}
         userLng={coords.lng}
         onClose={() => setDetailEvent(null)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onSaveToCollection={handleSaveToCollection}
+        onTagFriend={handleTagFriend}
+      />
+
+      {/* User Authentication & Tier Upgrade Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        currentUser={currentUser}
+        onClose={() => setIsAuthOpen(false)}
+        onLogin={(user) => setCurrentUser(user)}
+        onUpgradeTier={handleUpgradeTier}
       />
 
       {/* Voice Assistant Overlay */}
