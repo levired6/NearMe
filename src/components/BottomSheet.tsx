@@ -1,6 +1,20 @@
-import React from 'react';
-import { NearMeEvent, EventCategory } from '../types/event';
-import { Utensils, Music, Trophy, Theater, Sparkles, ExternalLink, Star } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { NearMeEvent } from '../types/event';
+import { 
+  Utensils, 
+  Wine, 
+  Music, 
+  Trophy, 
+  Theater, 
+  Bus, 
+  Bed, 
+  Trees, 
+  Stethoscope, 
+  Wrench, 
+  Sparkles, 
+  Info, 
+  Star 
+} from 'lucide-react';
 
 interface BottomSheetProps {
   events: NearMeEvent[];
@@ -8,14 +22,21 @@ interface BottomSheetProps {
   onSelectCategory: (category: string) => void;
   selectedEvent: NearMeEvent | null;
   onSelectEvent: (event: NearMeEvent) => void;
+  onOpenDetail: (event: NearMeEvent) => void;
 }
 
 const CATEGORIES: { id: string; label: string; icon: React.FC<{ className?: string }> }[] = [
   { id: 'all', label: 'All', icon: Sparkles },
   { id: 'food', label: 'Food & Dining', icon: Utensils },
-  { id: 'music', label: 'Music & Nightlife', icon: Music },
+  { id: 'drinks', label: 'Bars & Nightlife', icon: Wine },
+  { id: 'music', label: 'Live Music', icon: Music },
   { id: 'sports', label: 'Sports', icon: Trophy },
   { id: 'theatre', label: 'Arts & Shows', icon: Theater },
+  { id: 'transit', label: 'Transit & Travel', icon: Bus },
+  { id: 'stays', label: 'Stays & Lodging', icon: Bed },
+  { id: 'parks', label: 'Parks & Outdoors', icon: Trees },
+  { id: 'medical', label: 'Medical & Health', icon: Stethoscope },
+  { id: 'services', label: 'Local Contractors', icon: Wrench },
 ];
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -24,16 +45,27 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   onSelectCategory,
   selectedEvent,
   onSelectEvent,
+  onOpenDetail,
 }) => {
+  // Auto-scroll to selected card when a map pin is tapped
+  useEffect(() => {
+    if (selectedEvent) {
+      const targetCard = document.getElementById(`card-${selectedEvent.id}`);
+      if (targetCard) {
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedEvent]);
+
   const filteredEvents = selectedCategory === 'all'
     ? events
     : events.filter((e) => e.category === selectedCategory);
 
   return (
-    <div className="bg-gray-900 border-t border-gray-800 text-white rounded-t-3xl shadow-2xl p-4 max-h-[50vh] overflow-y-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-20 bg-gray-900/95 backdrop-blur-md border-t border-gray-800 text-white rounded-t-3xl shadow-2xl p-4 h-[40vh] max-h-[450px] flex flex-col">
       
-      {/* Category Pills */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-3 no-scrollbar">
+      {/* Scrollable Category Pills Bar */}
+      <div className="flex items-center space-x-2 overflow-x-auto pb-3 flex-shrink-0 no-scrollbar">
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
           const isActive = selectedCategory === cat.id;
@@ -41,9 +73,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             <button
               key={cat.id}
               onClick={() => onSelectCategory(cat.id)}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${
+              className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-400/30'
                   : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}
             >
@@ -54,21 +86,22 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         })}
       </div>
 
-      {/* Events Card List */}
-      <div className="mt-2 space-y-3">
+      {/* Events Card Scrollable List */}
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 mt-1">
         {filteredEvents.length === 0 ? (
-          <div className="text-center py-8 text-gray-400 text-sm">
-            No items found for this category nearby. Try changing filters or search a new ZIP code!
+          <div className="text-center py-10 text-gray-400 text-sm">
+            No items found for this category nearby. Try clicking another category or search a new ZIP code!
           </div>
         ) : (
           filteredEvents.map((event) => {
             const isSelected = selectedEvent?.id === event.id;
             return (
               <div
+                id={`card-${event.id}`}
                 key={event.id}
                 onClick={() => onSelectEvent(event)}
                 className={`p-3 rounded-2xl bg-gray-800/80 hover:bg-gray-800 border transition cursor-pointer flex gap-3 ${
-                  isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-gray-700/50'
+                  isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-gray-800' : 'border-gray-700/50'
                 }`}
               >
                 <img
@@ -90,21 +123,23 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                       )}
                     </div>
                     <h4 className="font-semibold text-sm text-white truncate mt-1">{event.title}</h4>
-                    <p className="text-xs text-gray-400 truncate">{event.venueName} • {event.location.address}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {event.venueName} • {event.location.address}
+                    </p>
                   </div>
 
                   <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-700/40 text-xs">
                     <span className="text-indigo-400 font-medium">{event.startDateTime}</span>
-                    <a
-                      href={event.eventUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-gray-400 hover:text-white flex items-center space-x-1 text-[11px]"
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenDetail(event);
+                      }}
+                      className="text-gray-300 hover:text-indigo-300 bg-gray-700/60 hover:bg-gray-700 px-2.5 py-1 rounded-lg flex items-center space-x-1 text-[11px] transition"
                     >
+                      <Info className="w-3 h-3" />
                       <span>Details</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    </button>
                   </div>
                 </div>
               </div>

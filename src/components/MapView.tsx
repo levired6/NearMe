@@ -43,7 +43,7 @@ export const MapView: React.FC<MapViewProps> = ({
     };
   }, []);
 
-  // Update map center when coordinates change
+  // Update map center when searching location/zip
   useEffect(() => {
     if (mapRef.current) {
       mapRef.current.flyTo({
@@ -63,14 +63,22 @@ export const MapView: React.FC<MapViewProps> = ({
     markersRef.current = [];
 
     events.forEach((event) => {
+      if (!event.location?.longitude || !event.location?.latitude) return;
+
       const isSelected = event.id === selectedEventId;
       const isHighlighted = highlightedIds.includes(event.id);
 
-      // Create custom marker element
+      // Simple, fixed-size marker element
       const el = document.createElement('div');
-      el.className = `cursor-pointer transition-transform duration-200 transform hover:scale-125 ${
-        isSelected ? 'scale-125 z-30' : 'z-10'
-      }`;
+      el.style.width = '28px';
+      el.style.height = '28px';
+      el.style.borderRadius = '50%';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.cursor = 'pointer';
+      el.style.fontSize = '12px';
+      el.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.3)';
 
       const color =
         event.category === 'food'
@@ -81,15 +89,17 @@ export const MapView: React.FC<MapViewProps> = ({
           ? '#ef4444'
           : '#10b981';
 
-      el.innerHTML = `
-        <div style="background-color: ${color};" class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg border-2 ${
-          isHighlighted ? 'border-yellow-300 ring-4 ring-yellow-400/50 animate-bounce' : 'border-white'
-        }">
-          📍
-        </div>
-      `;
+      el.style.backgroundColor = color;
+      el.style.border = isSelected
+        ? '3px solid #ffffff'
+        : isHighlighted
+        ? '3px solid #fde047'
+        : '2px solid #ffffff';
 
-      el.addEventListener('click', () => {
+      el.innerText = '📍';
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
         onSelectEvent(event);
       });
 
@@ -99,7 +109,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [events, selectedEventId, highlightedIds]);
+  }, [events, selectedEventId, highlightedIds, onSelectEvent]);
 
   return (
     <div className="w-full h-full relative">

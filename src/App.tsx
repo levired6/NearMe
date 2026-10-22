@@ -1,43 +1,46 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { MapView } from './components/MapView';
 import { BottomSheet } from './components/BottomSheet';
+import { DetailModal } from './components/DetailModal';
 import { VoiceAssistant } from './components/VoiceAssistant';
 import { fetchAllNearMeData } from './services/api';
 import { NearMeEvent } from './types/event';
 
+// Austin, TX fallback coordinates
+const DEFAULT_COORDS = { lat: 30.2672, lng: -97.7431 };
+
 export function App() {
-  // Default to Austin, TX coordinates as fallback
-  const [coords, setCoords] = useState<{ lat: number; lng: number }>({ lat: 30.2672, lng: -97.7431 });
+  const [coords, setCoords] = useState<{ lat: number; lng: number }>(DEFAULT_COORDS);
   const [events, setEvents] = useState<NearMeEvent[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<NearMeEvent | null>(null);
+  const [detailEvent, setDetailEvent] = useState<NearMeEvent | null>(null);
   const [highlightedIds, setHighlightedIds] = useState<string[]>([]);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Request browser GPS position on launch
+  // Request browser GPS position cleanly
   const handleUseCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position: GeolocationPosition) => {
-          setCoords({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          if (lat && lng) {
+            setCoords({ lat, lng });
+          }
         },
         (error: GeolocationPositionError) => {
-          console.warn('Geolocation error:', error);
-        }
+          console.warn('Geolocation denied/unavailable. Using default location:', error);
+          setCoords(DEFAULT_COORDS);
+        },
+        { timeout: 5000 }
       );
     }
   };
 
-  useEffect(() => {
-    handleUseCurrentLocation();
-  }, []);
-
-  // Fetch events whenever location or category changes
+  // Fetch events whenever location coordinates or selected category changes
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -45,7 +48,10 @@ export function App() {
     fetchAllNearMeData(coords.lat, coords.lng, selectedCategory === 'all' ? undefined : selectedCategory)
       .then((data: NearMeEvent[]) => {
         if (isMounted) {
-          setEvents(data);
+          const validData = data.filter(
+            (item) => item.location?.latitude && item.location?.longitude && item.location.latitude !== 0
+          );
+          setEvents(validData);
           setLoading(false);
         }
       })
@@ -67,10 +73,11 @@ export function App() {
       );
       const data = await response.json();
       if (data && data.length > 0) {
-        setCoords({
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon),
-        });
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          setCoords({ lat, lng: lon });
+        }
       } else {
         alert('Could not find location. Please try another ZIP code or city!');
       }
@@ -107,13 +114,20 @@ export function App() {
         />
       </main>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Bottom Sheet Drawer */}
       <BottomSheet
         events={events}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
         selectedEvent={selectedEvent}
         onSelectEvent={(event: NearMeEvent) => setSelectedEvent(event)}
+        onOpenDetail={(event: NearMeEvent) => setDetailEvent(event)}
+      />
+
+      {/* In-App Detail View Modal */}
+      <DetailModal
+        event={detailEvent}
+        onClose={() => setDetailEvent(null)}
       />
 
       {/* Voice Assistant Overlay */}
