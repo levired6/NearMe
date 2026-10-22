@@ -127,6 +127,8 @@ export function App() {
       {/* In-App Detail View Modal */}
       <DetailModal
         event={detailEvent}
+        userLat={coords.lat}
+        userLng={coords.lng}
         onClose={() => setDetailEvent(null)}
       />
 

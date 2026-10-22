@@ -3,6 +3,7 @@ import { NearMeEvent } from '../types/event';
 import { 
   Utensils, 
   Wine, 
+  Sprout, 
   Music, 
   Trophy, 
   Theater, 
@@ -26,9 +27,10 @@ interface BottomSheetProps {
 }
 
 const CATEGORIES: { id: string; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: 'all', label: 'All', icon: Sparkles },
+  { id: 'all', label: 'All Places', icon: Sparkles },
   { id: 'food', label: 'Food & Dining', icon: Utensils },
   { id: 'drinks', label: 'Bars & Nightlife', icon: Wine },
+  { id: 'farms', label: 'Farms & Markets', icon: Sprout },
   { id: 'music', label: 'Live Music', icon: Music },
   { id: 'sports', label: 'Sports', icon: Trophy },
   { id: 'theatre', label: 'Arts & Shows', icon: Theater },
@@ -47,7 +49,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   onSelectEvent,
   onOpenDetail,
 }) => {
-  // Auto-scroll to selected card when a map pin is tapped
   useEffect(() => {
     if (selectedEvent) {
       const targetCard = document.getElementById(`card-${selectedEvent.id}`);
@@ -64,7 +65,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   return (
     <div className="fixed bottom-0 left-0 right-0 z-20 bg-gray-900/95 backdrop-blur-md border-t border-gray-800 text-white rounded-t-3xl shadow-2xl p-4 h-[40vh] max-h-[450px] flex flex-col">
       
-      {/* Scrollable Category Pills Bar */}
+      {/* Category Pills Bar */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-3 flex-shrink-0 no-scrollbar">
         {CATEGORIES.map((cat) => {
           const Icon = cat.icon;
@@ -90,7 +91,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       <div className="flex-1 overflow-y-auto space-y-3 pr-1 mt-1">
         {filteredEvents.length === 0 ? (
           <div className="text-center py-10 text-gray-400 text-sm">
-            No items found for this category nearby. Try clicking another category or search a new ZIP code!
+            No items found for this category nearby. Try searching another ZIP code or location!
           </div>
         ) : (
           filteredEvents.map((event) => {
