@@ -26,7 +26,26 @@ export function App() {
   // User Authentication State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
-  // Request browser GPS position cleanly
+  // Automatically request user location on initial app mount (with fallback to Austin)
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position: GeolocationPosition) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          if (lat && lng) {
+            setCoords({ lat, lng });
+          }
+        },
+        (error: GeolocationPositionError) => {
+          console.log('Geolocation prompt dismissed or unavailable. Using default fallback:', error.message);
+        },
+        { timeout: 7000, maximumAge: 60000 }
+      );
+    }
+  }, []);
+
+  // Manual request button handler for Navbar
   const handleUseCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
