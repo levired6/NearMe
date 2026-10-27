@@ -13,7 +13,6 @@ import {
   Stethoscope, 
   Wrench, 
   Sparkles, 
-  Info, 
   Star,
   Search
 } from 'lucide-react';
@@ -121,7 +120,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               <div
                 id={`card-${event.id}`}
                 key={event.id}
-                onClick={() => onSelectEvent(event)}
+                onClick={() => {
+                  onSelectEvent(event);
+                  onOpenDetail(event);
+                }}
                 className={`p-3 rounded-2xl bg-gray-800/80 hover:bg-gray-800 border transition cursor-pointer flex gap-3 ${
                   isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-gray-800' : 'border-gray-700/50'
                 }`}
@@ -152,16 +154,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
                   <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-700/40 text-xs">
                     <span className="text-indigo-400 font-medium">{event.startDateTime}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenDetail(event);
-                      }}
-                      className="text-gray-300 hover:text-indigo-300 bg-gray-700/60 hover:bg-gray-700 px-2.5 py-1 rounded-lg flex items-center space-x-1 text-[11px] transition"
-                    >
-                      <Info className="w-3 h-3" />
-                      <span>Details</span>
-                    </button>
                   </div>
                 </div>
               </div>
