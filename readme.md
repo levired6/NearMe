@@ -1,10 +1,10 @@
 # 🧭 NearMe — High-Performance Local Discovery Platform
 
-[![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.1-purple?style=for-the-badge&logo=vite)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![PWA Ready](https://img.shields.io/badge/PWA-Installable-success?style=for-the-badge&logo=pwa)](https://web.dev/progressive-web-apps/)
+![React 18](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)
+![TypeScript 5.2](https://img.shields.io/badge/TypeScript-5.2-blue?style=for-the-badge&logo=typescript)
+![Vite 5.1](https://img.shields.io/badge/Vite-5.1-purple?style=for-the-badge&logo=vite)
+![Tailwind CSS 3.4](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![PWA Installable](https://img.shields.io/badge/PWA-Installable-success?style=for-the-badge&logo=pwa)
 
 **NearMe** is a production-grade, high-performance local discovery web application designed to eliminate fragmented searching across multiple apps. By aggregating rich spatial data, live transit schedules, event ticketing, and delivery platform handoffs into a single map-first interface, NearMe provides a unified dashboard for urban and rural exploration.
 
