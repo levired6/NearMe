@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Navigation, Mic, User, Star, Sparkles } from 'lucide-react';
+import { MapPin, Navigation, Mic, User, Star, Sparkles, Search } from 'lucide-react';
 import { UserProfile } from '../types/user';
 
 interface NavbarProps {
@@ -17,17 +17,20 @@ export const Navbar: React.FC<NavbarProps> = ({
   onUseCurrentLocation,
   onOpenAuth,
 }) => {
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [zipInput, setZipInput] = useState('');
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleManualSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (zipInput.trim()) {
       onSearchZip(zipInput.trim());
+      setZipInput('');
+      setIsPromptOpen(false);
     }
   };
 
   return (
-    <header className="bg-gray-900/90 backdrop-blur-md border-b border-gray-800 text-white px-4 py-3 flex items-center justify-between z-30 shadow-lg">
+    <header className="bg-gray-900/90 backdrop-blur-md border-b border-gray-800 text-white px-4 py-3 flex items-center justify-between z-30 shadow-lg relative">
       
       {/* Brand Logo */}
       <div className="flex items-center space-x-2">
@@ -37,25 +40,43 @@ export const Navbar: React.FC<NavbarProps> = ({
         <span className="font-extrabold text-base tracking-tight hidden sm:inline text-white">NearMe</span>
       </div>
 
-      {/* ZIP Code & City Search Form */}
-      <form onSubmit={handleSearch} className="flex-1 max-w-sm mx-3 flex items-center space-x-1.5">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            placeholder="Search ZIP or City (e.g., 62298, 11211, Austin)..."
-            value={zipInput}
-            onChange={(e) => setZipInput(e.target.value)}
-            className="w-full bg-gray-950 border border-gray-800 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition"
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-full text-xs font-semibold shadow transition"
-        >
-          Go
-        </button>
-      </form>
+      {/* Center Location Control (Clean interactive button + toggleable search popup) */}
+      <div className="relative flex items-center justify-center flex-1 mx-2">
+        {!isPromptOpen ? (
+          <button
+            onClick={() => setIsPromptOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-gray-950 border border-gray-800 hover:border-indigo-500 text-xs text-gray-200 transition shadow-inner"
+            title="Click to search another location or ZIP"
+          >
+            <MapPin className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 animate-bounce" />
+            <span className="truncate max-w-[140px] sm:max-w-[200px]">Search ZIP or City...</span>
+          </button>
+        ) : (
+          <form onSubmit={handleManualSearch} className="flex items-center space-x-1 w-full max-w-xs animate-fadeIn">
+            <div className="relative flex-1">
+              <Search className="w-3.5 h-3.5 text-indigo-400 absolute left-2.5 top-2" />
+              <input
+                type="text"
+                autoFocus
+                placeholder="Enter ZIP, city, or country..."
+                value={zipInput}
+                onChange={(e) => setZipInput(e.target.value)}
+                onBlur={() => {
+                  // Slight delay so click events on submit register first
+                  setTimeout(() => setIsPromptOpen(false), 200);
+                }}
+                className="w-full bg-gray-950 border border-indigo-500 rounded-full pl-8 pr-3 py-1 text-xs text-white placeholder-gray-500 focus:outline-none shadow-lg"
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow"
+            >
+              Go
+            </button>
+          </form>
+        )}
+      </div>
 
       {/* Controls: GPS, Voice Assistant & User Auth */}
       <div className="flex items-center space-x-2">
