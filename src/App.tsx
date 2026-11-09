@@ -26,19 +26,25 @@ export function App() {
   // User Authentication State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
-  // Automatically request user location on initial app mount (with fallback to Austin)
+  // Automatically request user location on initial app mount (with fallback to Austin & (0,0) guard)
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position: GeolocationPosition) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          if (lat && lng) {
+
+          // Guard against (0, 0) / Null Island coordinates returned by desktop browsers
+          if (lat && lng && (Math.abs(lat) > 0.1 || Math.abs(lng) > 0.1)) {
             setCoords({ lat, lng });
+          } else {
+            console.log('Detected zero/invalid coordinates. Using default fallback (Austin).');
+            setCoords(DEFAULT_COORDS);
           }
         },
         (error: GeolocationPositionError) => {
           console.log('Geolocation prompt dismissed or unavailable. Using default fallback:', error.message);
+          setCoords(DEFAULT_COORDS);
         },
         { timeout: 7000, maximumAge: 60000 }
       );
@@ -52,8 +58,10 @@ export function App() {
         (position: GeolocationPosition) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          if (lat && lng) {
+          if (lat && lng && (Math.abs(lat) > 0.1 || Math.abs(lng) > 0.1)) {
             setCoords({ lat, lng });
+          } else {
+            setCoords(DEFAULT_COORDS);
           }
         },
         (error: GeolocationPositionError) => {
@@ -67,6 +75,11 @@ export function App() {
 
   // Fetch events whenever location coordinates or selected category changes
   useEffect(() => {
+    // Prevent wasted API calls to Null Island (0, 0)
+    if (!coords.lat || !coords.lng || (Math.abs(coords.lat) < 0.1 && Math.abs(coords.lng) < 0.1)) {
+      return;
+    }
+
     let isMounted = true;
     setLoading(true);
 
