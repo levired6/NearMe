@@ -4,10 +4,15 @@ const GOOGLE_PLACES_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const TICKETMASTER_KEY = import.meta.env.VITE_TICKETMASTER_API_KEY;
 
 /**
- * Fetch local spots with high density and expanded rural radius from Google Places API
+ * Fetch local spots with full portfolio-grade richness (photos, reviews, summaries) from Google Places API
  */
 export async function fetchGooglePlaces(lat: number, lng: number, category: string = 'food'): Promise<NearMeEvent[]> {
   if (!GOOGLE_PLACES_KEY) return [];
+
+  // Guard against invalid coordinates or Null Island (0, 0) to prevent wasted API calls
+  if (!lat || !lng || (Math.abs(lat) < 0.1 && Math.abs(lng) < 0.1)) {
+    return [];
+  }
 
   const isFarmCategory = category === 'farms';
   const radiusMeters = isFarmCategory ? 25000.0 : 8000.0; // 15.5 miles for farms to catch rural stands
@@ -57,7 +62,7 @@ export async function fetchGooglePlaces(lat: number, lng: number, category: stri
   const selectedBatches = typeBatches[category] || typeBatches['food'];
 
   try {
-    // Search Nearby Call
+    // Search Nearby Call with full Pro FieldMask for stunning portfolio details
     const nearbyRequests = selectedBatches.map((types) =>
       fetch('https://places.googleapis.com/v1/places:searchNearby', {
         method: 'POST',
@@ -216,6 +221,7 @@ export async function fetchGooglePlaces(lat: number, lng: number, category: stri
  */
 export async function fetchTicketmasterEvents(lat: number, lng: number): Promise<NearMeEvent[]> {
   if (!TICKETMASTER_KEY) return [];
+  if (!lat || !lng || (Math.abs(lat) < 0.1 && Math.abs(lng) < 0.1)) return [];
 
   const geoPoint = `${lat.toFixed(4)},${lng.toFixed(4)}`;
   const url = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${TICKETMASTER_KEY}&geoPoint=${geoPoint}&radius=25&unit=miles&size=20&sort=date,asc`;
@@ -269,9 +275,13 @@ export async function fetchTicketmasterEvents(lat: number, lng: number): Promise
 }
 
 /**
- * Unified fetcher that combines Google Places and Ticketmaster results
+ * Unified fetcher that combines Google Places and Ticketmaster results safely
  */
 export async function fetchAllNearMeData(lat: number, lng: number, categoryFilter?: string): Promise<NearMeEvent[]> {
+  if (!lat || !lng || (Math.abs(lat) < 0.1 && Math.abs(lng) < 0.1)) {
+    return [];
+  }
+
   const [places, tmEvents] = await Promise.all([
     fetchGooglePlaces(lat, lng, categoryFilter || 'food'),
     fetchTicketmasterEvents(lat, lng)
